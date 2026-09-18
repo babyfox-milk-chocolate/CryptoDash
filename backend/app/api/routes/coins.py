@@ -20,6 +20,7 @@ async def list_coins(
     except httpx.HTTPStatusError as e:
         raise HTTPException(status_code=502, detail=f"CoinGecko error: {e.response.status_code}")
 
+# response_model - фильтруем возвращаемые поля, оставляем только нужные  
 @router.get('/{coin_id}', response_model=CoinFull)
 async def coin_detail(
     coin_id: str, 
