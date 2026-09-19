@@ -30,4 +30,4 @@ async def coin_detail(
     try:
         return await get_coin_full(coin_id, days)
     except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=502, detail=f"CoinGecko error {e.reponse.status_code}")
+        raise HTTPException(status_code=502, detail=f"CoinGecko error {e.response.status_code}")

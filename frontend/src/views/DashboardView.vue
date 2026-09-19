@@ -1,12 +1,14 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import api from '@/api/axios'
+import PriceChart from '@/components/PriceChart.vue'
 
 const coins = ref([])
 const loading = ref(false)
 const error = ref('')
 const newCoin = ref('')
 const adding = ref(false)
+const warning = ref('')
 
 let intervalId = null
 
@@ -15,7 +17,15 @@ async function fetchDashboard() {
     const { data } = await api.get('/watchlist/dashboard')
     coins.value = data
   } catch (e) {
-    error.value = 'Не удалось загрузить данные'
+    const status = e.response?.status
+    if (status === 429){
+      error.value = 'Мы получили ограничение запросов. Данные обновятся через 1 минуту'
+    }else if (status === 401){
+      // эту ошибку обработает интерцептор 
+      return 
+    }else {
+      error.value = 'Не удалось загрузить данные'
+    }
   }
 }
 
@@ -76,6 +86,37 @@ onMounted(async () => {
 onUnmounted(() => {
   if (intervalId) clearInterval(intervalId)  // чистим таймер при уходе со страницы
 })
+
+const selectedCoin = ref(null)   // монета для модалки
+const coinDetail = ref(null)     // {market, history}
+const detailLoading = ref(false)
+
+async function openCoin(coin) {
+  selectedCoin.value = coin
+  detailLoading.value = true
+  coinDetail.value = null
+  try {
+    const { data } = await api.get(`/coins/${coin.id}?days=30`)
+    coinDetail.value = data
+  } catch (e) {
+    const status = e.response?.status
+    if (status === 429){
+      warning.value = '...'
+      error.value = 'Мы получили ограничение запросов. Данные обновятся через 1 минут'
+    }else if (status === 401){
+      return 
+    }else{
+      error.value = 'Ограничение кол-ва запросов. Ждем минуту... '
+    }
+  } finally {
+    detailLoading.value = false
+  }
+}
+
+function closeCoin() {
+  selectedCoin.value = null
+  coinDetail.value = null
+}
 </script>
 
 <template>
@@ -117,7 +158,7 @@ onUnmounted(() => {
 
     <!-- сетка карточек монет -->
     <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      <div v-for="coin in coins" :key="coin.id"
+      <div v-for="coin in coins" :key="coin.id" @click="openCoin(coin)"
         class="group bg-gray-800/60 border border-gray-700 rounded-2xl p-5 hover:border-violet-500/50 transition">
         <div class="flex items-center justify-between mb-4">
           <div class="flex items-center gap-3">
@@ -127,7 +168,7 @@ onUnmounted(() => {
               <div class="text-xs text-gray-500 uppercase">{{ coin.symbol }}</div>
             </div>
           </div>
-          <button @click="removeCoin(coin.id)"
+          <button @click.stop="removeCoin(coin.id)"
             class="text-gray-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition">✕</button>
         </div>
         <div class="text-2xl font-bold">{{ formatPrice(coin.current_price) }}</div>
@@ -143,5 +184,28 @@ onUnmounted(() => {
         </div>
       </div>
     </div>
+
+    <div v-if="selectedCoin" @click="closeCoin"
+      class="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
+      <div @click.stop class="bg-gray-800 border border-gray-700 rounded-2xl p-6 w-full max-w-2xl">
+        <div class="flex items-center justify-between mb-6">
+          <div class="flex items-center gap-3">
+            <img v-if="selectedCoin.image" :src="selectedCoin.image" class="w-10 h-10 rounded-full" />
+            <div>
+              <div class="text-lg font-bold">{{ selectedCoin.name }}</div>
+              <div class="text-sm text-gray-500">{{ formatPrice(selectedCoin.current_price) }}</div>
+            </div>
+          </div>
+          <button @click="closeCoin" class="text-gray-500 hover:text-gray-300 text-xl">✕</button>
+        </div>
+
+        <div v-if="detailLoading" class="h-64 flex items-center justify-center text-gray-500">Загрузка графика...</div>
+        <PriceChart v-else-if="coinDetail?.history?.prices"
+          :prices="coinDetail.history.prices"
+          :up="(selectedCoin.price_change_percentage_24h || 0) >= 0" />
+        <div class="text-xs text-gray-500 text-center mt-4">История цены за 30 дней</div>
+      </div>
+    </div>
+
   </div>
 </template>

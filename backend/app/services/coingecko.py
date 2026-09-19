@@ -5,7 +5,7 @@ from app.core.redis import redis_client
 
 
 BASE_URL = "https://api.coingecko.com/api/v3"
-CACHE_TTL = 60
+CACHE_TTL = 120
 
 
 async def get_coins_market_data(coin_ids: list[str]) -> list[dict]:

@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
+import httpx
 
 from app.api.deps import get_db, get_current_user
 from app.db.models import User, WatchlistItem
@@ -71,4 +72,9 @@ async def dashboard(
     )
     coin_ids = [item.coin_id for item in result.all()]
 
-    return await get_coins_market_data(coin_ids)
+    try:
+        return await get_coins_market_data(coin_ids)
+    except httpx.HTTPStatusError as e:
+        if e.response.status_code == 429:
+            raise HTTPException(status_code=429, detail="CoinGecko rate limit, wait a minute")
+        raise HTTPException(status_code=502, detail="CoinGecko unavailable")
