@@ -35,8 +35,7 @@
 | Последовательно (`await` подряд) | ~6.3 с |
 | Параллельно (`asyncio.gather`) | ~0.7 с |
 
----
-
+<img width="1651" height="1159" alt="image" src="https://github.com/user-attachments/assets/d8abacbf-b099-4949-adc4-a2259605492d" />
 
 ## Стек технологий
 
