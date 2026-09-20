@@ -11,7 +11,7 @@
 ![Redis](https://img.shields.io/badge/Redis-7-DC382D?logo=redis&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
 
-![alt text](image.png)
+<img width="1833" height="1316" alt="image" src="https://github.com/user-attachments/assets/6c96106c-a9d7-445d-9808-546541b7d81d" />
 
 ---
 
